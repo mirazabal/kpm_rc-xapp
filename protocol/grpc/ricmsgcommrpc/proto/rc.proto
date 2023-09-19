@@ -1,0 +1,60 @@
+syntax = "proto3";
+package rc;
+
+enum RICControlCellTypeEnum {
+ 
+    RIC_CONTROL_CELL_UNKWON = 0; 
+    RIC_CONTROL_NR_CELL = 1; 		// Indicates RIC Controls should be set for NR CELL
+    RIC_CONTROL_EUTRAN_CELL = 2;    // Indicates RIC Controls should be set for E_UTRAN CELL
+}
+
+enum RICControlAckEnum {
+ 
+    RIC_CONTROL_ACK_UNKWON = 0; 
+    RIC_CONTROL_NO_ACK = 1; // Optional RIC Control Acknowledgement is not required
+    RIC_CONTROL_ACK = 2;    // Optional RIC Control Acknowledgement is required
+    RIC_CONTROL_NACK = 3;   // Optional RIC Control Acknowledgement is only required to report failure
+}
+
+message RICE2APHeader  {
+        int64          RanFuncId = 1;
+        int64          RICRequestorID = 2;
+}
+
+message RICControlHeader {
+        int64           ControlStyle = 1;
+        int64           ControlActionId = 2;
+        string          UEID = 3;
+}
+
+
+message RICControlMessage {
+	RICControlCellTypeEnum    RICControlCellTypeVal = 1;
+        string         		  TargetCellID = 2;
+		
+}
+
+//RicControl GRPC Req  
+message RicControlGrpcReq {
+	string              e2NodeID = 1;
+	string              plmnID = 2;
+	string              ranName = 3;
+	RICE2APHeader       RICE2APHeaderData = 4;
+	RICControlHeader    RICControlHeaderData = 5;
+	RICControlMessage   RICControlMessageData = 6;
+	RICControlAckEnum   RICControlAckReqVal = 7; //Currently this Parameter is not Encoded as Part of RIC Control message
+}
+
+//RicControlGrpc Rsp
+message RicControlGrpcRsp {
+    int32   rspCode = 1;       //Set rspCode to 0. Acknowledging the receipt of GRPC request
+    string  description = 2;   //Set despcription.
+}
+
+// Services to send gRPC
+service MsgComm {
+    //gRPC call to Send RICControlReqServiceGrpc
+    rpc SendRICControlReqServiceGrpc(RicControlGrpcReq) returns (RicControlGrpcRsp);
+}
+
+
