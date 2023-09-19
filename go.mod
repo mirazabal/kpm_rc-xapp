@@ -1,4 +1,4 @@
-module kpm_rc
+module kpm-rc
 
 go 1.18
 
@@ -73,8 +73,8 @@ replace gerrit.o-ran-sc.org/r/ric-plt/sdlgo => gerrit.o-ran-sc.org/r/ric-plt/sdl
 
 replace gerrit.o-ran-sc.org/r/com/golog => gerrit.o-ran-sc.org/r/com/golog.git v0.0.2
 
-// replace gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc => /home/mir/workspace/osc-ric-install-guide/kpm_rc-xapp/protocol/grpc/ricmsgcommrpc/rc
+// replace gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc => /home/mir/workspace/osc-ric-install-guide/kpm-rc-xapp/protocol/grpc/ricmsgcommrpc/rc
 
-replace gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc => /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc/protocol/grpc/ricmsgcommrpc/rc
+replace gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc => /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc/protocol/grpc/ricmsgcommrpc/rc
 
 

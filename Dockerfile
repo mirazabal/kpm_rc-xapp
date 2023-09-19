@@ -1,10 +1,10 @@
 # Docker build command that 
-#sudo docker build -t example.com:80/kpm_rc:1.0.0 . 
+#sudo docker build -t example.com:80/kpm-rc:1.0.0 . 
 
 
 
-FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu20-c-go:1.0.0 as build-kpm_rc
-#FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu18-c-go:1.9.0 as build-kpm_rc
+FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu20-c-go:1.0.0 as build-kpm-rc
+#FROM nexus3.o-ran-sc.org:10002/o-ran-sc/bldr-ubuntu18-c-go:1.9.0 as build-kpm-rc
 
 # Install utilities
 RUN apt update && apt install -y iputils-ping net-tools curl sudo ca-certificates
@@ -17,12 +17,12 @@ RUN wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages
 RUN wget --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_4.8.0_amd64.deb/download.deb && dpkg -i rmr-dev_4.8.0_amd64.deb && rm -rf rmr-dev_4.8.0_amd64.deb
 
 # Install dependencies, compile and test the module
-RUN mkdir -p /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc
-COPY . /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc
+RUN mkdir -p /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc
+COPY . /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc
 
-WORKDIR /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc
+WORKDIR /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc
 
-#WORKDIR "/go/src/kpm_rc"
+#WORKDIR "/go/src/kpm-rc"
 
 ENV GO111MODULE=on GO_ENABLED=0 GOOS=linux
 
@@ -56,10 +56,10 @@ RUN cd e2sm && \
     cp wrapper.h headers/*.h /usr/local/include/e2sm && \
     ldconfig
 
-#RUN go build -a -installsuffix cgo -o kpm_rc kpm_rc.go
+#RUN go build -a -installsuffix cgo -o kpm-rc kpm-rc.go
 
 RUN go build .
-#kpm_rc.go && pwd && ls -lat
+#kpm-rc.go && pwd && ls -lat
 
 
 # Final deployment container
@@ -70,12 +70,12 @@ ENV RMR_SEED_RT=config/uta_rtg.rt
 
 RUN mkdir /config
 
-COPY --from=build-kpm_rc /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc /
-COPY --from=build-kpm_rc  /go/src/gerrit.o-ran-sc.org/r/kpm_rc/rc/config/* /config/
-COPY --from=build-kpm_rc /usr/local/lib /usr/local/lib
+COPY --from=build-kpm-rc /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc /
+COPY --from=build-kpm-rc  /go/src/gerrit.o-ran-sc.org/r/kpm-rc/rc/config/* /config/
+COPY --from=build-kpm-rc /usr/local/lib /usr/local/lib
 
 RUN ldconfig
 
-RUN chmod 755 /kpm_rc
-CMD /kpm_rc
+RUN chmod 755 /kpm-rc
+CMD /kpm-rc
 

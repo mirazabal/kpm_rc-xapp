@@ -1,13 +1,13 @@
 {
-    "name": "kpm_rc",
+    "name": "kpm-rc",
     "version": "1.0.0",
     "containers": [
         {
-            "name": "kpm_rc",
+            "name": "kpm-rc",
             "image": {
-                "registry": "nexus3.o-ran-sc.org:10004",
-                "name": "o-ran-sc/ric-app-kpm_rc",
-                "tag": "1.1.1"
+                "registry": "example.com:80",
+                "name": "kpm-rc",
+                "tag": "1.0.0"
             }
         }
     ],
@@ -31,28 +31,28 @@
         "ports": [
             {
                 "name": "http",
-                "container": "kpm_rc",
+                "container": "kpm-rc",
                 "port": 8080,
                 "description": "http service"
             },
             {
                 "name": "rmrroute",
-                "container": "kpm_rc",
+                "container": "kpm-rc",
                 "port": 4561,
-                "description": "rmr route port for kpm_rc xapp"
+                "description": "rmr route port for kpm-rc xapp"
             },
             {
                 "name": "rmrdata",
-                "container": "kpm_rc",
+                "container": "kpm-rc",
                 "port": 4560,
-                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_INDICATION"],
-                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "RIC_SGNB_ADDITION_REQ", "RIC_SGNB_ADDITION_ACK"],
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE", "RIC_ERROR_INDICATION"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "RIC_SGNB_ADDITION_REQ", "RIC_SGNB_ADDITION_ACK", "RIC_CONTROL_REQ" ],
                 "mtypes" : [
                         {"name":"TESTNAME1","id":55555},
                         {"name":"TESTNAME2","id":55556}
                 ],
                 "policies": [1],
-                "description": "rmr data port for kpm_rc"
+                "description": "rmr data port for kpm-rc"
             }
         ]
     },
@@ -61,11 +61,12 @@
         "maxSize": 2072,
         "numWorkers": 1,
         "txMessages": [
-            "RIC_SUB_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP"
+            "RIC_SUB_REQ", "A1_POLICY_RESP", "A1_POLICY_QUERY", "RIC_HEALTH_CHECK_RESP" , "RIC_CONTROL_REQ" 
         ],
         "rxMessages": [
             "RIC_SUB_RESP",
-            "A1_POLICY_REQ", "RIC_HEALTH_CHECK_REQ"
+            "A1_POLICY_REQ", "RIC_HEALTH_CHECK_REQ", 
+	    "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE", "RIC_ERROR_INDICATION"
         ],
     "policies": [1]
     },

@@ -27,6 +27,7 @@ import (
   "gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc"
   "unsafe"
   "errors"
+  "time"
 )
 
 var (
@@ -199,7 +200,7 @@ func (e *HWApp) sendSubscription(meid string) {
 			{
 				ActionToBeSetupList: clientmodel.ActionsToBeSetup{
 					&clientmodel.ActionToBeSetup{
-						ActionDefinition: clientmodel.ActionDefinition([]int64{1, 2, 3, 4}),
+						ActionDefinition: clientmodel.ActionDefinition([]int64{0,1,2,3}),
 						ActionID:         &actionId,
 						ActionType:       &actionType,
 						SubsequentAction: &clientmodel.SubsequentAction{
@@ -208,7 +209,7 @@ func (e *HWApp) sendSubscription(meid string) {
 						},
 					},
 				},
-				EventTriggers:       clientmodel.EventTriggerDefinition([]int64{1, 2, 3, 4}),
+				EventTriggers:       clientmodel.EventTriggerDefinition([]int64{0, 1 }),
 				XappEventInstanceID: &xappEventInstanceID,
 			},
 		}),
@@ -235,6 +236,8 @@ func (e *HWApp) sendSubscription(meid string) {
 
 func (e *HWApp) xAppStartCB(d interface{}) {
 	xapp.Logger.Info("xApp ready call back received")
+	time.Sleep(8 * time.Second)
+	xapp.Logger.Info("After sleep xApp ready call back received")
 
 	// get the list of all NBs
 	nbList := e.getnbList()
@@ -390,6 +393,9 @@ var cnt = 0
 func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
 	// update metrics for indication message
 	e.stats["RICIndicationRx"].Inc()
+
+
+  xapp.Logger.Info("Indication message arrived")
 
   cnt++
   if cnt % 10 == 0 {
