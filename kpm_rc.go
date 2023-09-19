@@ -23,7 +23,7 @@ import (
   "encoding/json"
   "gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/xapp"
   "gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/clientmodel"
-  "github.com/spf13/viper"
+//  "github.com/spf13/viper"
   "gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc"
   "unsafe"
   "errors"
@@ -447,21 +447,31 @@ func (e *HWApp) Consume(msg *xapp.RMRParams) (err error) {
 
 
 
+func (e *HWApp) Run() {
+
+	// set MDC
+	xapp.Logger.SetMdc("KPM-RC-App", "1.0.0")
+
+	// set config change listener
+	//xapp.AddConfigChangeListener(e.ConfigChangeHandler)
+
+	// register callback after xapp ready
+	xapp.SetReadyCB(e.xAppStartCB, true)
+
+	// reading configuration from config file
+//	waitForSdl := xapp.Config.GetBool("db.waitForSdl")
+
+	// start xapp
+	xapp.RunWithParams(e, true)
+
+}
 
 func main() {
  
-	//Set Logger Configuration
-	xappname := viper.GetString("name")
-	xappversion := viper.GetString("version")
-	
-  // xapp object is initialized at pkg/xapp (I think). Only telecom engineers can have such broken ideas
-  xapp.Logger.SetMdc("Name", xappname)
-	xapp.Logger.SetMdc("Version", xappversion)
-
-
   fmt.Println("Hello, World!")
 
-	// Defind metrics counter that the xapp provides
+  // xapp object is initialized at pkg/xapp (I think). Only telecom engineers can have such broken ideas
+	// Defined metrics counter that the xapp provides
 	metrics := []xapp.CounterOpts{
 		{
 			Name: "RICIndicationRx",
@@ -470,19 +480,10 @@ func main() {
 	}
 
 	hw := HWApp{
-		stats: xapp.Metric.RegisterCounterGroup(metrics, "hw_go"), // register counter
+		stats: xapp.Metric.RegisterCounterGroup(metrics, "kpm_rc_go"), // register counter
 	}
 
-
-	xapp.SetReadyCB(hw.xAppStartCB, true)
-	
-  // start xapp
-	xapp.RunWithParams(&hw, true)
-
-
-  //  var err = 5
-  //  xapp.Logger.Error("Failed to generate EventTriggerDefinition, err = %v", err)
-
+	hw.Run()
 
 }
 
