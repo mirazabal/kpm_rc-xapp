@@ -1,0 +1,10 @@
+---
+distribution_type: container
+container_release_tag: 1.1.2
+container_pull_registry: nexus3.o-ran-sc.org:10004
+container_push_registry: nexus3.o-ran-sc.org:10002
+project: ric-app/hw-go
+ref: c0f228f91b64f462d1409fe4bd5bc1c3e440bf75
+containers:
+    - name: ric-app-hw-go
+      version: 1.1.2
