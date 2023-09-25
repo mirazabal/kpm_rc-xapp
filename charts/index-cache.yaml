@@ -3,12 +3,12 @@ entries:
   hw-go:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2023-09-20T08:05:10.942224253Z"
+    created: "2023-09-25T10:24:53.584072879Z"
     description: Standard xApp Helm Chart
-    digest: 1b2fc6d684b7d6b187d0e47fad4ff5e1ff1f35db9d71dc2b3960b582fae749ae
+    digest: eefeb70972ece8df5554dfe6adb4a11d3b7a9949359eb8c64fcc9661f585b7ee
     name: hw-go
     urls:
     - charts/hw-go-1.0.0.tgz
     version: 1.0.0
-generated: "2023-09-20T08:05:11Z"
+generated: "2023-09-25T10:24:54Z"
 serverInfo: {}

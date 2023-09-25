@@ -2,7 +2,7 @@
 #include "wrapper.h"
 #include "OCTET_STRING.h"
 #include "BIT_STRING.h"
-#include "UEID-GNB.h"
+//#include "UEID-GNB.h"
 
 
 /*
@@ -122,11 +122,8 @@ ssize_t e2sm_encode_ric_control_header(void *buffer, size_t buf_size, void *ueID
                 return -1;
         }
      
-         controlHeader_Fmt1->ueId = enc_ue_id_asn();
-
-
-
-	controlHeader_Fmt1->ueId.present =  UEID_PR_gNB_UEID;
+        // controlHeader_Fmt1->ueId =  enc_ue_id_asn();
+	//controlHeader_Fmt1->ueId.present =  UEID_PR_gNB_UEID;
 
         controlHeader_Fmt1->ueId.buf = (uint8_t*)calloc(1, ueIDbuf_size);   
         memcpy(controlHeader_Fmt1->ueId.buf, ueIDbuf, ueIDbuf_size);        //Check how to get ueIDbuf from string

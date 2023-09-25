@@ -289,17 +289,6 @@ func (e *HWApp) xAppStartCB(d interface{}) {
 
 func send_rc(){
 
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-	xapp.Logger.Info("Sending RC")
-
 	aRicHoControlMsg := RicHoControlMsg{}
 	aRicHoControlMsg.RicControlGrpcReqPtr = new( rc.RicControlGrpcReq) 
 	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData      = new(rc.RICE2APHeader) 
@@ -449,6 +438,19 @@ var cnt = 0
 func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
 	// update metrics for indication message
 	e.stats["RICIndicationRx"].Inc()
+
+  xapp.Logger.Debug("Received RIC Indication message %d ", cnt)
+
+    cptr := unsafe.Pointer(&r.Payload[0])
+     
+    C.e2ap_sm_kpm_decode(cptr,  r.PayloadLen)
+
+  for i := 0; i < r.PayloadLen; i++ {
+    fmt.Fprintf(os.Stderr, " %02x", r.Payload[i])
+  }
+
+
+
 
   cnt++
   if cnt % 5 == 0 {
