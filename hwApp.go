@@ -51,103 +51,45 @@ import "C"
 */
 import "C"
 
-
-
-
-
-
-
-
-
-
 import (
 	"encoding/json"
 	"gerrit.o-ran-sc.org/r/ric-plt/alarm-go.git/alarm"
 	"gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/clientmodel"
 	"gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/xapp"
-	"fmt"
-	"sync"
-	"os"
 	"log"
 	"time"
-	"gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc"
 	"unsafe"
 	"errors"
 )
 
-const MAX_CONTROL_REQ_ATTEMPTS = 2
-const RIC_CONTROL_STYLE_TYPE = 3
-const RIC_CONTROL_ACTION_ID = 1
+type DRB int32
 
-const TIME_NANOSEC = 1000000000
+const (
+    Create  DRB = 0
+    Release DRB = 1
+)
 
-const RIC_CONTROL_TARGET_PRIMARY_CELL = 1
-const RIC_CONTROL_TARGET_CELL = 2
-const RIC_CONTROL_CELL_TYPE = 3
-const RIC_CONTROL_CGI_TYPE = 4
-
-//GRPC rsp codes
-const GRPC_SUCCESS = 0
-const GRPC_ERROR = -1
-
-type Control struct {
-        eventRicControlReqTimePeriod int32                //maximum time for the RIC Subscription Request event creation procedure in the E2 Node
-        rcChan                       chan *xapp.RMRParams //channel for receiving rmr message
-        eventRicControlReqExpiredMap map[int]bool //map for recording the RIC Subscription Request event creation procedure is expired or not
-        eventRicControlReqExpiredMu  *sync.Mutex  //mutex for eventCreateExpiredMap
-        ricRequestInstanceID         int
-}
-type RicHoControlMsg struct {
-        RicControlGrpcReqPtr *rc.RicControlGrpcReq
-}
-
-type E2sm struct {
-}
-
-func (c *E2sm) SetRicControlHeader(buffer []byte, ueIDbuf []byte, ricControlStyleType int64, ricControlActionID int64) (newBuffer []byte, err error) {
+func SetRicControlHeader(buffer []byte) (newBuffer []byte, err error) {
         cptr := unsafe.Pointer(&buffer[0])
-       
-	//cptr_ueIDbuf := unsafe.Pointer(&ueIDbuf[0])
-	//size := C.e2sm_encode_ric_control_header(cptr, C.size_t(len(buffer)), cptr_ueIDbuf, C.size_t(len(ueIDbuf)), C.long(ricControlStyleType), C.long(ricControlActionID))
-        //newBuffer = C.GoBytes(cptr,  (C.int(size)+7)/8)
-
 	size := C.rc_encode_rc_ric_ctl_hdr(cptr, 4096)
         newBuffer = C.GoBytes(cptr,  C.int(size)) // (C.int(size)+7)/8)
-        
-	xapp.Logger.Info("E2sm SetRicControlHeader is success")
         return
 }
 
-var cnt_fai = 0
-
-func (c *E2sm) SetRicControlMessage(buffer []byte, targetPrimaryCell int64, targetCell int64, nrCGIOrECGI int64, nrOrEUtraCell int64, ranParameterValue []byte) (newBuffer []byte, err error) {
-        cptr := unsafe.Pointer(&buffer[0])
-//        cptrRanParameterValue := unsafe.Pointer(&ranParameterValue[0])
-
-//        size := C.e2sm_encode_ric_control_message(cptr, C.size_t(len(buffer)), C.long(targetPrimaryCell),
-//                C.long(targetCell), C.long(nrOrEUtraCell), C.long(nrCGIOrECGI), cptrRanParameterValue, C.size_t(len(ranParameterValue)))
-//        if size < 0 {
-//                return make([]byte, 0), errors.New("e2sm wrapper is unable to set RicControlMessage due to wrong or invalid input")
-//        }
-
-	if cnt_fai % 2 == 0 {
+func SetRicControlMessage(buffer []byte, d DRB) (newBuffer []byte, err error) {
+	cptr := unsafe.Pointer(&buffer[0])
+	if d == Create {
 	  size := C.create_drb_rc_msg(cptr, C.size_t(len(buffer)))
-//        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
           newBuffer = C.GoBytes(cptr, (C.int(size))) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
 	} else {
 	  size := C.release_drb_rc_msg(cptr, C.size_t(len(buffer)))
-//        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
           newBuffer = C.GoBytes(cptr, (C.int(size))) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
 	}
-	cnt_fai++	
 	xapp.Logger.Info("E2sm SetRicControlMessage is success")
         return
 }
 
-type E2ap struct {
-}
-
-func (c *E2ap) SetRicControlRequestPayload(payload []byte, ricRequestorID uint16, ricRequestSequenceNumber uint16, ranFunctionID uint16,
+func SetRicControlRequestPayload(payload []byte, ricRequestorID uint16, ricRequestSequenceNumber uint16, ranFunctionID uint16,
         ricControlHdr []byte, ricControlMsg []byte) (newPayload []byte, err error) {
 
         cptr := unsafe.Pointer(&payload[0])
@@ -187,24 +129,6 @@ var (
 	rPort                = int64(4560)
 	clientEndpoint       = clientmodel.SubscriptionParamsClientEndpoint{Host: "service-ricxapp-hw-go-rmr.ricxapp", HTTPPort: &hPort, RMRPort: &rPort}
 )
-
-func (e *HWApp) sendPolicyQuery() {
-	xapp.Logger.Info("Invoked method to send  policy query message")
-
-	// prepare and send policy query message over RMR
-	rmrParams := new(xapp.RMRParams)
-	rmrParams.Mtype = A1_POLICY_QUERY // A1_POLICY_QUERY
-	rmrParams.Payload = []byte(POLICY_QUERY_PAYLOAD)
-
-	// send rmr message
-	flg := xapp.Rmr.SendMsg(rmrParams)
-
-	if flg {
-		xapp.Logger.Info("Successfully sent policy query message over RMR")
-	} else {
-		xapp.Logger.Info("Failed to send policy query message over RMR")
-	}
-}
 
 func (e *HWApp) ConfigChangeHandler(f string) {
 	xapp.Logger.Info("Config file changed")
@@ -256,9 +180,9 @@ func (e *HWApp) getnbList() []*xapp.RNIBNbIdentity {
 func (e *HWApp) sendSubscription(meid string) {
 	xapp.Logger.Info("sending subscription request for meid : %s", meid)
 	if meid != "gnb_505_001_00000001" {
-	  return
-        } 
-	
+		return
+	} 
+
 	meid = "gnb_505_001_00000001"
 	subscriptionParams := clientmodel.SubscriptionParams{
 		ClientEndpoint: &clientEndpoint,
@@ -323,130 +247,26 @@ func (e *HWApp) xAppStartCB(d interface{}) {
 	}
 }
 
-
-func send_rc(){
-
-	aRicHoControlMsg := RicHoControlMsg{}
-	aRicHoControlMsg.RicControlGrpcReqPtr = new( rc.RicControlGrpcReq) 
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData      = new(rc.RICE2APHeader) 
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData   = new(rc.RICControlHeader) 
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData  = new(rc.RICControlMessage) 
-
-	aRicHoControlMsg.RicControlGrpcReqPtr.RanName = "gnb_505_001_00000002"
-	aRicHoControlMsg.RicControlGrpcReqPtr.E2NodeID = "00000000000000000000000000000001"
-	
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.TargetCellID = "1113"
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID = "00006"
-	aRicHoControlMsg.RicControlGrpcReqPtr.PlmnID = "05F510"
-
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlActionId  = 1
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlStyle = 3
-
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.RICControlCellTypeVal = 4
-
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RICRequestorID  =2
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RanFuncId = 3
-	lUEID := aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID
-	xapp.Logger.Debug("HandlegRPCRICControlMsgReq UEID = %s ", lUEID)
-	//Mandatory parameters validation
-	if aRicHoControlMsg.RicControlGrpcReqPtr.E2NodeID == "" ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.TargetCellID == "" ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID == "" ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.PlmnID == "" ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlActionId < 0 ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlStyle < 0 ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.RICControlCellTypeVal < 0 ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RICRequestorID < 0 ||
-	aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RanFuncId < 0 {
-		xapp.Logger.Error("Mandaroty parameters missing, dont send control request ")
-		return
-	}
-
-	var e2ap *E2ap
-	var e2sm *E2sm
-
-	xapp.Logger.Info("SendRicControlRequest Enter for RanName = %s", aRicHoControlMsg.RicControlGrpcReqPtr.RanName)
-
-	//if aRicHoControlMsg.RicControlGrpcReqPtr == nil {
-	//      return err
-	//}
-
-	var lRicControlStyleType int64 = aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlStyle
-	var lRicControlActionID int64 = aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.ControlActionId
-	//lUEID := aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID
-
-	lUeIdBuf := []byte(aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-
-	xapp.Logger.Debug("UEID:%s, lUeIdBuf: %v", aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID, lUeIdBuf)
-
+func send_rc(drb DRB){
 	var lRicControlHeader []byte = make([]byte, 4096) //Check the Size
-	lRicControlHeaderEncoded, err := e2sm.SetRicControlHeader(lRicControlHeader, lUeIdBuf, lRicControlStyleType, lRicControlActionID)
-	if err != nil {
-		xapp.Logger.Error("SetRicControlHeader Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		log.Printf("SetRicControlHeader Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		return // err
-	} else {
-		xapp.Logger.Info("SetRicControlHeader is success: %x", lRicControlHeaderEncoded)
-		fmt.Fprintf(os.Stderr, "Encoded RIC Control Header PDU:\n")
-		for i := 0; i < len(lRicControlHeaderEncoded); i++ {
-			fmt.Fprintf(os.Stderr, " %02x", lRicControlHeaderEncoded[i])
-		}
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-
-	var lTargetPrimaryCell int64 = RIC_CONTROL_TARGET_PRIMARY_CELL
-	var lTargetCell int64 = RIC_CONTROL_TARGET_CELL
-	var lNrCGIOrECGI int64 = RIC_CONTROL_CGI_TYPE
-
-	var aRequestSN = 1
-	lNrOrEUtraCellType := aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.RICControlCellTypeVal
-	lTargetCellVal := aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.TargetCellID
-	lTargetCellValBuf := []byte(lTargetCellVal)
-
+	lRicControlHeaderEncoded, err := SetRicControlHeader(lRicControlHeader)
 	var lRicControlMessage []byte = make([]byte, 4096)
-	lRicControlMessageEncoded, err := e2sm.SetRicControlMessage(lRicControlMessage, lTargetPrimaryCell, lTargetCell, lNrCGIOrECGI, int64(lNrOrEUtraCellType), lTargetCellValBuf)
-	if err != nil {
-		xapp.Logger.Error("SetRicControlMessage Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		log.Printf("SetRicControlMessage Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		return // err
-	} else {
-		xapp.Logger.Debug("SetRicControlMessage is success: %x", lRicControlMessageEncoded)
-		fmt.Fprintf(os.Stderr, "Encoded RIC Control Message PDU:\n")
-		for i := 0; i < len(lRicControlMessageEncoded); i++ {
-			fmt.Fprintf(os.Stderr, " %02x", lRicControlMessageEncoded[i])
-		}
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-
+	lRicControlMessageEncoded, err := SetRicControlMessage(lRicControlMessage, drb)
+	
 	lParams := &xapp.RMRParams{}
 	lParams.Mtype = 12040 //RIC_CONTROL_REQ
 	lParams.SubId = -1
 
-	var lRequestorId uint16 = uint16(aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RICRequestorID)
-	var lFuncId uint16 = uint16(aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RanFuncId)
+	var aRequestSN uint16 = 1
+	var lRequestorId uint16 = 2 
+	var lFuncId uint16 =  3  
 
-	lParams.Payload = make([]byte, 4096)
-	lParams.Payload, err = e2ap.SetRicControlRequestPayload(lParams.Payload, lRequestorId, uint16(aRequestSN), lFuncId, lRicControlHeaderEncoded, lRicControlMessageEncoded)
-	if err != nil {
-		xapp.Logger.Error("SetRicControlRequestPayload Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		log.Printf("SetRicControlRequestPayload Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
-		return // err
-	} else {
-		xapp.Logger.Debug("Encoding RicControlRequestPayload is success. UEID: %s, Payload: %x", lUEID, lParams.Payload)
-		fmt.Fprintf(os.Stderr, "Encoded RIC Control Req PDU: {} \n", len(lParams.Payload) )
-		for i := 0; i < len(lParams.Payload); i++ {
-			fmt.Fprintf(os.Stderr, " %02x", lParams.Payload[i])
-		}
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-	valEnbId := aRicHoControlMsg.RicControlGrpcReqPtr.E2NodeID
-	valRanName := aRicHoControlMsg.RicControlGrpcReqPtr.RanName
-	valPlmnId := aRicHoControlMsg.RicControlGrpcReqPtr.PlmnID
+	lParams.Payload = make([]byte, 8192)
+	lParams.Payload, err = SetRicControlRequestPayload(lParams.Payload, lRequestorId, aRequestSN, lFuncId, lRicControlHeaderEncoded, lRicControlMessageEncoded)
+	valEnbId := "00000000000000000000000000000001" 
+	valRanName := "gnb_505_001_00000002" 
+	valPlmnId :=  "05F510" 
 	lParams.Meid = &xapp.RMRMeid{PlmnID: valPlmnId, EnbID: valEnbId, RanName: valRanName}
-
-	xapp.Logger.Debug("The RIC Control RMR message to be sent is with MsgType:%d  SubId=%d, lParams.Meid: %v, UEID: %s", lParams.Mtype, lParams.SubId, lParams.Meid, lUEID)
-
-	xapp.Logger.Debug("Sending RIC Control message to RanName: %s, UEID: %s  ", aRicHoControlMsg.RicControlGrpcReqPtr.RanName, lUEID)
 
 	if !xapp.Rmr.Send(lParams, false) {
 		err = errors.New("rmr.Send() failed")
@@ -457,22 +277,26 @@ func send_rc(){
 		return
 	}
 
-	xapp.Logger.Info("Sending RIC Control message to RanName: %s, UEID: %s  Success", aRicHoControlMsg.RicControlGrpcReqPtr.RanName, lUEID)
-
-	//      aRicHoControlMsg.setEventRicControlCreateExpiredTimer(aRequestSN) //TODO check if this is required as we are not expecting Control ACK
-
 	return // nil
 }
 
-var one_ms int64 = 1000 
-var ten_ms int64 = 10000 
-var num_drbs int64 = 1 
+
+func create_second_bearer(){
+	send_rc(Create)	
+}
+
+func release_second_bearer(){
+	send_rc(Release)	
+}
+
+const one_ms int64 = 1000 
+const ten_ms int64 = 10000 
+const three_sec int64  = 3000000 
+
 var last_us int64 = 0 
-var three_sec int64  = 3000000 
+var num_drbs int64 = 1 
 
 func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
-	// update metrics for indication message
-//	e.stats["RICIndicationRx"].Inc()
 
   xapp.Logger.Debug("Received RIC Indication message ")
 
@@ -480,45 +304,17 @@ func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
   cptr2 := C.print_e2ap_msg(cptr, C.size_t(r.PayloadLen) )
   var sojourn_time = int64(C.kpm_dec_ind_asn(cptr2))
 
-  xapp.Logger.Debug("Sojourn time %ld", sojourn_time)
-
+  xapp.Logger.Info("Sojourn time %ld", sojourn_time)
 
   if(sojourn_time > ten_ms && num_drbs == 1){
-      // RC Control
-      //rc_ctrl_req_data_t rc_ctrl = {0};
-      //defer({ free_rc_ctrl_req_data(&rc_ctrl); });
-
-      //rc_ctrl.hdr = gen_rc_ctrl_hdr();
-      //rc_ctrl.msg = gen_rc_ctrl_msg();
-
-      //for(size_t i =0; i < nodes.len; ++i){
-      //  if(nodes.n[i].id.type == ngran_gNB_CU ){
-      //    control_sm_xapp_api(&nodes.n[i].id, RC_ran_function, &rc_ctrl);
-      //  }
-      //}
-      send_rc()
+      create_second_bearer()
       num_drbs = 2
       last_us = time.Now().UnixNano() / 1e3 
-      //printf("Creating second bearer\n");
-
-      xapp.Logger.Debug("Creating second bearer")
+      xapp.Logger.Info("Creating second bearer")
     } else if(sojourn_time < one_ms && num_drbs == 2 && (((time.Now().UnixNano() / 1e3) - last_us) > three_sec) ){
-      // RC Control
-      //rc_ctrl_req_data_t rc_ctrl = {0};
-      //defer({ free_rc_ctrl_req_data(&rc_ctrl); });
-
-      //rc_ctrl.hdr = gen_rc_ctrl_hdr();
-      //rc_ctrl.msg = gen_rc_ctrl_msg_release_bearer();
-
-      //for(size_t i =0; i < nodes.len; ++i){
-      //  if(nodes.n[i].id.type == ngran_gNB_CU ){
-      //    control_sm_xapp_api(&nodes.n[i].id, RC_ran_function, &rc_ctrl);
-      //  }
-      //}
-
-      send_rc()
+      release_second_bearer()
       num_drbs = 1
-      xapp.Logger.Debug("Releasing second bearer")
+      xapp.Logger.Info("Releasing second bearer")
     }
 }
 
@@ -568,7 +364,6 @@ func (e *HWApp) Run() {
 
 	// start xapp
 	xapp.RunWithParams(e, waitForSdl)
-
 }
 
 func main() {
