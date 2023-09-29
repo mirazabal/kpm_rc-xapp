@@ -1,6 +1,6 @@
 #include "wrapper.h"
 
-
+/*
 #include "E2SM-KPM-EventTriggerDefinition-Format1.h"
 #include "E2SM-KPM-EventTriggerDefinition.h"
 #include "E2SM-KPM-IndicationHeader.h"
@@ -22,12 +22,11 @@
 #include "RIC-EventTriggerStyle-Item.h"
 #include "RIC-ReportStyle-Item.h"
 #include "MeasurementInfo-Action-Item.h"
+*/
+#include <stdio.h>
+#include "kpm_dec_asn.h"
 
-typedef struct {
-  size_t len;
-  uint8_t *buf;
-} byte_array_t;
-
+#include "byte_array.h"
 
 typedef struct{
  byte_array_t hdr;
@@ -42,12 +41,25 @@ int64_t kpm_dec_ind_asn(void* data)
 
   hdr_msg_t* in = (hdr_msg_t*)data;
 
+  kpm_ind_hdr_t hdr = kpm_dec_ind_hdr_asn(in->hdr.len, in->hdr.buf);
+  kpm_ind_msg_t msg = kpm_dec_ind_msg_asn(in->msg.len, in->msg.buf);
 
+  int64_t const sojourn_time = msg.frm_3.meas_report_per_ue[0].ind_msg_format_1.meas_data_lst[0].meas_record_lst[0].real_val;  
+
+  free_kpm_ind_hdr(&hdr);
+  free_kpm_ind_msg(&msg);
+
+
+  fprintf(stderr, "Sojourn time KPM C %ld \n", sojourn_time);
+
+  return sojourn_time; 
+
+/*
   E2SM_KPM_IndicationHeader_t *pdu_hdr = calloc(1, sizeof(E2SM_KPM_IndicationHeader_t));
   assert( pdu_hdr !=NULL && "Memory exhausted" );
 
   const enum asn_transfer_syntax syntax = ATS_ALIGNED_BASIC_PER;
-  asn_dec_rval_t rval = asn_decode_kpm(NULL, syntax, &asn_DEF_E2SM_KPM_IndicationHeader, (void**)&pdu_hdr, in->hdr.buf, in->hdr.len);
+  asn_dec_rval_t rval = asn_decode(NULL, syntax, &asn_DEF_E2SM_KPM_IndicationHeader, (void**)&pdu_hdr, in->hdr.buf, in->hdr.len);
   assert(rval.code == RC_OK && "Are you sending data in ATS_ALIGNED_BASIC_PER syntax?");
 
   xer_fprint(stderr, &asn_DEF_E2SM_KPM_IndicationHeader, pdu_hdr);
@@ -55,7 +67,7 @@ int64_t kpm_dec_ind_asn(void* data)
   E2SM_KPM_IndicationMessage_t *pdu_msg = calloc(1, sizeof(E2SM_KPM_IndicationMessage_t));
   assert( pdu_msg !=NULL && "Memory exhausted" );
 
-  rval = asn_decode_kpm(NULL, syntax, &asn_DEF_E2SM_KPM_IndicationMessage, (void**)&pdu_msg, in->msg.buf, in->msg.len);
+  rval = asn_decode(NULL, syntax, &asn_DEF_E2SM_KPM_IndicationMessage, (void**)&pdu_msg, in->msg.buf, in->msg.len);
   assert(rval.code == RC_OK && "Are you sending data in ATS_ALIGNED_BASIC_PER syntax?");
 
  // xer_fprint(stderr, &asn_DEF_E2SM_KPM_IndicationMessage, pdu_msg);
@@ -76,6 +88,8 @@ int64_t kpm_dec_ind_asn(void* data)
   }
 
   return 100;
+  */
+
 }
 
 

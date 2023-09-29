@@ -44,7 +44,7 @@ COPY protocol protocol
 RUN ls
 
 
-RUN go get google.golang.org/grpc@v1.39.0
+#RUN go get google.golang.org/grpc@v1.39.0
 
 # "COMPILING E2SM Wrapper"
 RUN cd e2sm && \
@@ -57,8 +57,8 @@ RUN cd e2sm && \
 
 # "COMPILING KPM V2"
 RUN cd kpmv2 && \
-    gcc -c -fPIC -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT -Ihdr/ lib/*.c wrapper.c  -fvisibility=hidden  && \
-    gcc -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT  *.o -shared   -fvisibility=hidden   -o libkpmv2wrapper.so && \
+    gcc -c -fPIC -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT -Ihdr/ lib/*.c wrapper.c -fvisibility=hidden && \
+    gcc -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT  *.o -shared -fvisibility=hidden -o libkpmv2wrapper.so && \
     cp  libkpmv2wrapper.so /usr/local/lib/ && \
     mkdir /usr/local/include/kpmv2 && \
     cp wrapper.h hdr/*.h /usr/local/include/kpmv2 && \

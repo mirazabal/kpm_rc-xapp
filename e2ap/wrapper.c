@@ -173,7 +173,7 @@ hdr_msg_t e2ap_dec_indication(const E2AP_PDU_t* pdu)
 void* print_e2ap_msg(void* buffer, size_t buf_size)
 {
     E2AP_PDU_t *pdu =  decode_E2AP_PDU(buffer, buf_size);
-    xer_fprint(stderr, &asn_DEF_E2AP_PDU, pdu);
+    //xer_fprint(stderr, &asn_DEF_E2AP_PDU, pdu);
 
     hdr_msg_t* out = calloc(1, sizeof(hdr_msg_t  )); 
     *out = e2ap_dec_indication(pdu);
@@ -288,9 +288,9 @@ ssize_t e2ap_encode_ric_control_request_message(void *buffer, size_t buf_size, l
     controlMsg->size = ricControlMsgSize;
     ASN_SEQUENCE_ADD(&control_request->protocolIEs.list, controlReqMsg);
 
-    fprintf(stderr, "showing xer of asn_DEF_E2AP_PDU data\n");
-    xer_fprint(stderr, &asn_DEF_E2AP_PDU, init);
-    fprintf(stderr, "\n");
+    //fprintf(stderr, "showing xer of asn_DEF_E2AP_PDU data\n");
+    //xer_fprint(stderr, &asn_DEF_E2AP_PDU, init);
+    //fprintf(stderr, "\n");
    
     ssize_t const encoded = encode_E2AP_PDU(init, buffer, buf_size);
     fprintf(stderr, "Encoded amount of bits %ld \n", encoded);

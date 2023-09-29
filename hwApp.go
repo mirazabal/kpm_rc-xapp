@@ -289,11 +289,11 @@ func release_second_bearer(){
 	send_rc(Release)	
 }
 
-const one_ms int64 = 1000 
-const ten_ms int64 = 10000 
+const one_ms C.int64_t = 1000 
+const ten_ms C.int64_t = 10000 
 const three_sec int64  = 3000000 
 
-var last_us int64 = 0 
+var last_us  int64 = 0 
 var num_drbs int64 = 1 
 
 func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
@@ -302,7 +302,7 @@ func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
 
   cptr := unsafe.Pointer(&r.Payload[0])
   cptr2 := C.print_e2ap_msg(cptr, C.size_t(r.PayloadLen) )
-  var sojourn_time = int64(C.kpm_dec_ind_asn(cptr2))
+  var sojourn_time C.int64_t = C.kpm_dec_ind_asn(cptr2)
 
   xapp.Logger.Info("Sojourn time %ld", sojourn_time)
 

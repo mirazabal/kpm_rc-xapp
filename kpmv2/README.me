@@ -1,0 +1,15 @@
+
+
+Contain the files from 
+
+find ~/wrk/flexric/src/util/ -name "*.h" | xargs cp -t .
+find ~/wrk/flexric/src/sm/kpm_sm/kpm_sm_v02.03/ -name "*.h" | xargs cp -t .
+find ~/wrk/flexric/src/lib/3gpp/ -name "*.h" | xargs cp -t .
+find ~/wrk/flexric/src/lib/sm/ -name "*.h" | xargs cp -t .
+
+
+
+
+main.py shorten the include string i.e.,
+#include "a/b/c.h" ->#include "c.h" 
+
