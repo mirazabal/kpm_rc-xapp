@@ -45,22 +45,43 @@ RUN ls
 
 
 RUN go get google.golang.org/grpc@v1.39.0
+
+# "COMPILING E2SM Wrapper"
+RUN cd e2sm && \
+    gcc -c -fPIC  -fvisibility=hidden -Iheaders/ lib/*.c wrapper.c  && \
+    gcc *.o -shared  -fvisibility=hidden   -o libe2smwrapper.so && \
+    cp libe2smwrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/e2sm && \
+    cp wrapper.h headers/*.h /usr/local/include/e2sm && \
+    ldconfig
+
+# "COMPILING KPM V2"
+RUN cd kpmv2 && \
+    gcc -c -fPIC -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT -Ihdr/ lib/*.c wrapper.c  -fvisibility=hidden  && \
+    gcc -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT  *.o -shared   -fvisibility=hidden   -o libkpmv2wrapper.so && \
+    cp  libkpmv2wrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/kpmv2 && \
+    cp wrapper.h hdr/*.h /usr/local/include/kpmv2 && \
+    ldconfig
+
+
 # "COMPILING E2AP Wrapper"
 RUN cd e2ap && \
-    gcc -c -fPIC -Iheaders/ lib/*.c wrapper.c && \
-    gcc *.o -shared -o libe2apwrapper.so && \
+    gcc -c -fPIC  -fvisibility=hidden  -Iheaders/ lib/*.c  wrapper.c && \
+    gcc *.o -shared -fvisibility=hidden  -o libe2apwrapper.so && \
     cp libe2apwrapper.so /usr/local/lib/ && \
     mkdir /usr/local/include/e2ap && \
     cp wrapper.h headers/*.h /usr/local/include/e2ap && \
     ldconfig
 
-# "COMPILING E2SM Wrapper"
-RUN cd e2sm && \
-    gcc -c -fPIC -Iheaders/ lib/*.c wrapper.c && \
-    gcc *.o -shared -o libe2smwrapper.so && \
-    cp libe2smwrapper.so /usr/local/lib/ && \
-    mkdir /usr/local/include/e2sm && \
-    cp wrapper.h headers/*.h /usr/local/include/e2sm && \
+
+# "COMPILING RC V1"
+RUN cd rcv1 && \
+    gcc -c -fPIC -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT -Ihdr/ lib/*.c wrapper.c -fvisibility=hidden && \
+    gcc -DASN_DISABLE_OER_SUPPORT -DASN_DISABLE_JER_SUPPORT *.o -shared -fvisibility=hidden -o librcv1wrapper.so && \
+    cp librcv1wrapper.so /usr/local/lib/ && \
+    mkdir /usr/local/include/rcv1 && \
+    cp wrapper.h hdr/*.h /usr/local/include/rcv1 && \
     ldconfig
 
 

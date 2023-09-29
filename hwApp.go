@@ -36,6 +36,30 @@ import "C"
 */
 import "C"
 
+/*
+#include <kpmv2/wrapper.h>
+#cgo LDFLAGS: -lkpmv2wrapper -lm
+#cgo CFLAGS: -I/usr/local/include/kpmv2
+*/
+import "C"
+
+
+/*
+#include <rcv1/wrapper.h>
+#cgo LDFLAGS: -lrcv1wrapper -lm
+#cgo CFLAGS: -I/usr/local/include/rcv1
+*/
+import "C"
+
+
+
+
+
+
+
+
+
+
 import (
 	"encoding/json"
 	"gerrit.o-ran-sc.org/r/ric-plt/alarm-go.git/alarm"
@@ -45,6 +69,7 @@ import (
 	"sync"
 	"os"
 	"log"
+	"time"
 	"gerrit.o-ran-sc.org/r/ric-app/rc/protocol/grpc/ricmsgcommrpc/rc"
 	"unsafe"
 	"errors"
@@ -81,29 +106,41 @@ type E2sm struct {
 
 func (c *E2sm) SetRicControlHeader(buffer []byte, ueIDbuf []byte, ricControlStyleType int64, ricControlActionID int64) (newBuffer []byte, err error) {
         cptr := unsafe.Pointer(&buffer[0])
-        cptr_ueIDbuf := unsafe.Pointer(&ueIDbuf[0])
-        size := C.e2sm_encode_ric_control_header(cptr, C.size_t(len(buffer)), cptr_ueIDbuf, C.size_t(len(ueIDbuf)),
-                C.long(ricControlStyleType), C.long(ricControlActionID))
+       
+	//cptr_ueIDbuf := unsafe.Pointer(&ueIDbuf[0])
+	//size := C.e2sm_encode_ric_control_header(cptr, C.size_t(len(buffer)), cptr_ueIDbuf, C.size_t(len(ueIDbuf)), C.long(ricControlStyleType), C.long(ricControlActionID))
+        //newBuffer = C.GoBytes(cptr,  (C.int(size)+7)/8)
 
-        if size < 0 {
-                return make([]byte, 0), errors.New("e2sm wrapper is unable to set EventTriggerDefinition due to wrong or invalid input")
-        }
-        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8)
-        xapp.Logger.Info("E2sm SetRicControlHeader is success")
+	size := C.rc_encode_rc_ric_ctl_hdr(cptr, 4096)
+        newBuffer = C.GoBytes(cptr,  C.int(size)) // (C.int(size)+7)/8)
+        
+	xapp.Logger.Info("E2sm SetRicControlHeader is success")
         return
 }
 
+var cnt_fai = 0
+
 func (c *E2sm) SetRicControlMessage(buffer []byte, targetPrimaryCell int64, targetCell int64, nrCGIOrECGI int64, nrOrEUtraCell int64, ranParameterValue []byte) (newBuffer []byte, err error) {
         cptr := unsafe.Pointer(&buffer[0])
-        cptrRanParameterValue := unsafe.Pointer(&ranParameterValue[0])
+//        cptrRanParameterValue := unsafe.Pointer(&ranParameterValue[0])
 
-        size := C.e2sm_encode_ric_control_message(cptr, C.size_t(len(buffer)), C.long(targetPrimaryCell),
-                C.long(targetCell), C.long(nrOrEUtraCell), C.long(nrCGIOrECGI), cptrRanParameterValue, C.size_t(len(ranParameterValue)))
-        if size < 0 {
-                return make([]byte, 0), errors.New("e2sm wrapper is unable to set RicControlMessage due to wrong or invalid input")
-        }
-        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
-        xapp.Logger.Info("E2sm SetRicControlMessage is success")
+//        size := C.e2sm_encode_ric_control_message(cptr, C.size_t(len(buffer)), C.long(targetPrimaryCell),
+//                C.long(targetCell), C.long(nrOrEUtraCell), C.long(nrCGIOrECGI), cptrRanParameterValue, C.size_t(len(ranParameterValue)))
+//        if size < 0 {
+//                return make([]byte, 0), errors.New("e2sm wrapper is unable to set RicControlMessage due to wrong or invalid input")
+//        }
+
+	if cnt_fai % 2 == 0 {
+	  size := C.create_drb_rc_msg(cptr, C.size_t(len(buffer)))
+//        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
+          newBuffer = C.GoBytes(cptr, (C.int(size))) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
+	} else {
+	  size := C.release_drb_rc_msg(cptr, C.size_t(len(buffer)))
+//        newBuffer = C.GoBytes(cptr, (C.int(size)+7)/8) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
+          newBuffer = C.GoBytes(cptr, (C.int(size))) //TOCHECK: if C.int(size) is returning bits not bytes to get correct size of the buffer.
+	}
+	cnt_fai++	
+	xapp.Logger.Info("E2sm SetRicControlMessage is success")
         return
 }
 
@@ -117,19 +154,13 @@ func (c *E2ap) SetRicControlRequestPayload(payload []byte, ricRequestorID uint16
         cptr_ricControlHdr := unsafe.Pointer(&ricControlHdr[0])
         cptr_ricControlMsg := unsafe.Pointer(&ricControlMsg[0])
 
-        xapp.Logger.Debug("\n")
-        xapp.Logger.Debug("ricControlHdr\n", ricControlHdr)
-        xapp.Logger.Debug("\n")
-        xapp.Logger.Debug("ricControlMsg\n", ricControlMsg)
-        xapp.Logger.Debug("\n")
-
         size := C.e2ap_encode_ric_control_request_message(cptr, C.size_t(len(payload)), C.long(ricRequestorID), C.long(ricRequestSequenceNumber),
                 C.long(ranFunctionID), cptr_ricControlHdr, C.size_t(len(ricControlHdr)), cptr_ricControlMsg, C.size_t(len(ricControlMsg)))
         if size < 0 {
                 return make([]byte, 0), errors.New("e2ap wrapper is unable to set Subscription Request Payload due to wrong or invalid payload")
         }
         newPayload = C.GoBytes(cptr, (C.int(size)+7)/8)
-        xapp.Logger.Info("SetRicControlHeader is success")
+        //newPayload = C.GoBytes(cptr, (C.int(size)))
         return
 }
 
@@ -223,9 +254,12 @@ func (e *HWApp) getnbList() []*xapp.RNIBNbIdentity {
 }
 
 func (e *HWApp) sendSubscription(meid string) {
-
 	xapp.Logger.Info("sending subscription request for meid : %s", meid)
-
+	if meid != "gnb_505_001_00000001" {
+	  return
+        } 
+	
+	meid = "gnb_505_001_00000001"
 	subscriptionParams := clientmodel.SubscriptionParams{
 		ClientEndpoint: &clientEndpoint,
 		Meid:           &meid,
@@ -277,6 +311,9 @@ func (e *HWApp) sendSubscription(meid string) {
 func (e *HWApp) xAppStartCB(d interface{}) {
 	xapp.Logger.Info("xApp ready call back received")
 
+	// RMR may still not be ready, so be gentle in this mist and sleep	
+	time.Sleep(10 * time.Second)
+
 	// get the list of all NBs
 	nbList := e.getnbList()
 
@@ -295,7 +332,7 @@ func send_rc(){
 	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData   = new(rc.RICControlHeader) 
 	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData  = new(rc.RICControlMessage) 
 
-	aRicHoControlMsg.RicControlGrpcReqPtr.RanName = "gnb_505_001_00000001"
+	aRicHoControlMsg.RicControlGrpcReqPtr.RanName = "gnb_505_001_00000002"
 	aRicHoControlMsg.RicControlGrpcReqPtr.E2NodeID = "00000000000000000000000000000001"
 	
 	aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.TargetCellID = "1113"
@@ -342,7 +379,7 @@ func send_rc(){
 
 	xapp.Logger.Debug("UEID:%s, lUeIdBuf: %v", aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID, lUeIdBuf)
 
-	var lRicControlHeader []byte = make([]byte, 256) //Check the Size
+	var lRicControlHeader []byte = make([]byte, 4096) //Check the Size
 	lRicControlHeaderEncoded, err := e2sm.SetRicControlHeader(lRicControlHeader, lUeIdBuf, lRicControlStyleType, lRicControlActionID)
 	if err != nil {
 		xapp.Logger.Error("SetRicControlHeader Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
@@ -366,7 +403,7 @@ func send_rc(){
 	lTargetCellVal := aRicHoControlMsg.RicControlGrpcReqPtr.RICControlMessageData.TargetCellID
 	lTargetCellValBuf := []byte(lTargetCellVal)
 
-	var lRicControlMessage []byte = make([]byte, 1024)
+	var lRicControlMessage []byte = make([]byte, 4096)
 	lRicControlMessageEncoded, err := e2sm.SetRicControlMessage(lRicControlMessage, lTargetPrimaryCell, lTargetCell, lNrCGIOrECGI, int64(lNrOrEUtraCellType), lTargetCellValBuf)
 	if err != nil {
 		xapp.Logger.Error("SetRicControlMessage Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
@@ -388,7 +425,7 @@ func send_rc(){
 	var lRequestorId uint16 = uint16(aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RICRequestorID)
 	var lFuncId uint16 = uint16(aRicHoControlMsg.RicControlGrpcReqPtr.RICE2APHeaderData.RanFuncId)
 
-	lParams.Payload = make([]byte, 2048)
+	lParams.Payload = make([]byte, 4096)
 	lParams.Payload, err = e2ap.SetRicControlRequestPayload(lParams.Payload, lRequestorId, uint16(aRequestSN), lFuncId, lRicControlHeaderEncoded, lRicControlMessageEncoded)
 	if err != nil {
 		xapp.Logger.Error("SetRicControlRequestPayload Failed: %v, UEID:%s", err, aRicHoControlMsg.RicControlGrpcReqPtr.RICControlHeaderData.UEID)
@@ -396,7 +433,7 @@ func send_rc(){
 		return // err
 	} else {
 		xapp.Logger.Debug("Encoding RicControlRequestPayload is success. UEID: %s, Payload: %x", lUEID, lParams.Payload)
-		fmt.Fprintf(os.Stderr, "Encoded RIC Control Req PDU:\n")
+		fmt.Fprintf(os.Stderr, "Encoded RIC Control Req PDU: {} \n", len(lParams.Payload) )
 		for i := 0; i < len(lParams.Payload); i++ {
 			fmt.Fprintf(os.Stderr, " %02x", lParams.Payload[i])
 		}
@@ -427,38 +464,62 @@ func send_rc(){
 	return // nil
 }
 
-
-
-
-
-
-var cnt = 0
-
+var one_ms int64 = 1000 
+var ten_ms int64 = 10000 
+var num_drbs int64 = 1 
+var last_us int64 = 0 
+var three_sec int64  = 3000000 
 
 func (e *HWApp) handleRICIndication(ranName string, r *xapp.RMRParams) {
 	// update metrics for indication message
-	e.stats["RICIndicationRx"].Inc()
+//	e.stats["RICIndicationRx"].Inc()
 
-  xapp.Logger.Debug("Received RIC Indication message %d ", cnt)
+  xapp.Logger.Debug("Received RIC Indication message ")
 
-    cptr := unsafe.Pointer(&r.Payload[0])
-     
-    C.e2ap_sm_kpm_decode(cptr,  r.PayloadLen)
+  cptr := unsafe.Pointer(&r.Payload[0])
+  cptr2 := C.print_e2ap_msg(cptr, C.size_t(r.PayloadLen) )
+  var sojourn_time = int64(C.kpm_dec_ind_asn(cptr2))
 
-  for i := 0; i < r.PayloadLen; i++ {
-    fmt.Fprintf(os.Stderr, " %02x", r.Payload[i])
-  }
+  xapp.Logger.Debug("Sojourn time %ld", sojourn_time)
 
 
+  if(sojourn_time > ten_ms && num_drbs == 1){
+      // RC Control
+      //rc_ctrl_req_data_t rc_ctrl = {0};
+      //defer({ free_rc_ctrl_req_data(&rc_ctrl); });
 
+      //rc_ctrl.hdr = gen_rc_ctrl_hdr();
+      //rc_ctrl.msg = gen_rc_ctrl_msg();
 
-  cnt++
-  if cnt % 5 == 0 {
-    //Send RC...
-    send_rc()
-  }
+      //for(size_t i =0; i < nodes.len; ++i){
+      //  if(nodes.n[i].id.type == ngran_gNB_CU ){
+      //    control_sm_xapp_api(&nodes.n[i].id, RC_ran_function, &rc_ctrl);
+      //  }
+      //}
+      send_rc()
+      num_drbs = 2
+      last_us = time.Now().UnixNano() / 1e3 
+      //printf("Creating second bearer\n");
 
+      xapp.Logger.Debug("Creating second bearer")
+    } else if(sojourn_time < one_ms && num_drbs == 2 && (((time.Now().UnixNano() / 1e3) - last_us) > three_sec) ){
+      // RC Control
+      //rc_ctrl_req_data_t rc_ctrl = {0};
+      //defer({ free_rc_ctrl_req_data(&rc_ctrl); });
 
+      //rc_ctrl.hdr = gen_rc_ctrl_hdr();
+      //rc_ctrl.msg = gen_rc_ctrl_msg_release_bearer();
+
+      //for(size_t i =0; i < nodes.len; ++i){
+      //  if(nodes.n[i].id.type == ngran_gNB_CU ){
+      //    control_sm_xapp_api(&nodes.n[i].id, RC_ran_function, &rc_ctrl);
+      //  }
+      //}
+
+      send_rc()
+      num_drbs = 1
+      xapp.Logger.Debug("Releasing second bearer")
+    }
 }
 
 func (e *HWApp) Consume(msg *xapp.RMRParams) (err error) {
