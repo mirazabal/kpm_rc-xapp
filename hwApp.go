@@ -53,6 +53,7 @@ import "C"
 
 import (
 	"encoding/json"
+	//"encoding/binary"
 	"gerrit.o-ran-sc.org/r/ric-plt/alarm-go.git/alarm"
 	"gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/clientmodel"
 	"gerrit.o-ran-sc.org/r/ric-plt/xapp-frame/pkg/xapp"
@@ -177,6 +178,16 @@ func (e *HWApp) getnbList() []*xapp.RNIBNbIdentity {
 	return nbs
 }
 
+//func read_int64(data []byte) (ret []int64) {
+//    buf := bytes.NewBuffer(data)
+//    for _, b := range buf{
+//    	binary.Read(b, binary.LittleEndian, &ret)
+//    } 
+//    return
+//}
+
+
+
 func (e *HWApp) sendSubscription(meid string) {
 	xapp.Logger.Info("sending subscription request for meid : %s", meid)
 	if meid != "gnb_505_001_00000001" {
@@ -184,6 +195,24 @@ func (e *HWApp) sendSubscription(meid string) {
 	} 
 
 	meid = "gnb_505_001_00000001"
+
+
+	//ad := make([]byte, 8192)
+	//cptr_ad := unsafe.Pointer(&ad[0])	
+        //size := C.kpm_action_def(cptr_ad, C.size_t(8192))
+
+	//byteSlice := ad[:size] // binary.BigEndian.Uint32(ad[:size]) // ad[:size] //
+	//intSlice := make([]int64, size)   
+	//for idx, elm := range byteSlice {
+    // index is the index where we are
+    // element is the element from someSlice for where we are
+    	  //binary.Read(elm, binary.BigEndian, &intSlice[idx])
+	//}
+
+	//intSlice := new( []int64 )
+	//binary.Write(intSlice, binary.BigEndian,  byteSlice)
+        //intSlice := make([]int64, len(byteSlice))
+
 	subscriptionParams := clientmodel.SubscriptionParams{
 		ClientEndpoint: &clientEndpoint,
 		Meid:           &meid,
@@ -236,7 +265,7 @@ func (e *HWApp) xAppStartCB(d interface{}) {
 	xapp.Logger.Info("xApp ready call back received")
 
 	// RMR may still not be ready, so be gentle in this mist and sleep	
-	time.Sleep(10 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	// get the list of all NBs
 	nbList := e.getnbList()

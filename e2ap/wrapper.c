@@ -86,7 +86,7 @@ hdr_msg_t e2ap_dec_indication(const E2AP_PDU_t* pdu)
 
   assert(pdu->present == E2AP_PDU_PR_initiatingMessage);
   assert(pdu->choice.initiatingMessage->procedureCode == ProcedureCode_id_RICindication);
-  assert(pdu->choice.initiatingMessage->criticality == Criticality_reject);
+  //assert(pdu->choice.initiatingMessage->criticality == Criticality_reject);
   assert(pdu->choice.initiatingMessage->value.present == InitiatingMessage__value_PR_RICindication);
 
   const RICindication_t* out = &pdu->choice.initiatingMessage->value.choice.RICindication;
