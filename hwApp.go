@@ -268,12 +268,25 @@ func (e *HWApp) xAppStartCB(d interface{}) {
 	time.Sleep(15 * time.Second)
 
 	// get the list of all NBs
-	nbList := e.getnbList()
+	//nbList := e.getnbList()
 
 	// send subscription request to each of the NBs
-	for _, nb := range nbList {
-		e.sendSubscription(nb.InventoryName)
+	//for _, nb := range nbList {
+	//	e.sendSubscription(nb.InventoryName)
+	//}
+
+	for i := 0; i < 100; i++{
+		time.Sleep(5 * time.Second)
+		if i % 2 == 0 {
+			create_second_bearer()
+		} else {
+			release_second_bearer()
+		}
+
 	}
+
+
+
 }
 
 func send_rc(drb DRB){
