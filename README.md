@@ -1,3 +1,10 @@
+# xApp with KPM v2.03 and RC v1.03 developed to test with OpenAirInterface
+
+This xApp was developed from the Hello world xApp in Golang, and so it maintains it's original README.md text.
+Note that this xApp does not fix OSC RIC bugs, and so, it sometimes may malfunction. Due to the problems that we faced
+integrating OSC nearRT-RIC release H with OpenAirInterface RAN, we highly recommend using FlexRIC's nearRT-RIC instead.
+
+
 # O-RAN-SC Hello World Xapp in Golang
 
 This repository contains open-source code for a prototype golang xAPP for near real-time
